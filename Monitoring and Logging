@@ -1,0 +1,41 @@
+mkdir -p ./monitoring/prometheus
+mkdir -p ./monitoring/grafana/provisioning/datasources
+mkdir -p ./monitoring/grafana/provisioning/dashboards
+mkdir -p ./monitoring/grafana/provisioning/plugins
+
+prometheus config:
+
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+  - job_name: 'node_exporter'
+    static_configs:
+      - targets: ['node_exporter:9100']
+
+grafana:
+
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+
+ELK:
+
+mkdir -p ./elk/security
+
+xpack.security.enabled: true
+xpack.security.audit.enabled: true
+
+elasticsearch.hosts: ["http://localhost:9200"]
+elasticsearch.username: "kibana_system"
+elasticsearch.password: "your_password"
