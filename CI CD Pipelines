@@ -1,0 +1,83 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: my-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/yourusername/XNL-21BRS1010-NET-3.git'
+    targetRevision: HEAD
+    path: k8s/my-app
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: my-app
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+JENKINS:
+
+pipeline {
+    agent any
+
+    environment {
+        REPO_URL = 'https://github.com/yourusername/XNL-21BRS1010-NET-3.git'
+        IMAGE_NAME = 'my-app-image'
+        DOCKER_CREDENTIALS_ID = 'dockerhub-credentials'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: "${https://github.com/yourusername/XNL-21BRS1010-NET-3.git}"
+            }
+        }
+
+        stage('Build') {
+            steps {
+                script {
+                    docker.build("${IMAGE_NAME}:${env.BUILD_ID}")
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                script {
+                    // Run your tests here
+                    sh 'docker run --rm ${IMAGE_NAME}:${env.BUILD_ID} ./run-tests.sh'
+                }
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', "${DOCKER_CREDENTIALS_ID}") {
+                        sh "docker push ${IMAGE_NAME}:${env.BUILD_ID}"
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    // Update the Kubernetes deployment with the new image
+                    sh "kubectl set image deployment/my-app my-app=${IMAGE_NAME}:${env.BUILD_ID} --namespace=my-app"
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
+    }
+}
