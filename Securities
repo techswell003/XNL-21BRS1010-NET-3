@@ -1,0 +1,11 @@
+# IAM Policies Documentation
+
+## Policy Name: Developer Access
+- **Roles**: 
+  - roles/viewer
+  - roles/editor
+- **Resources**: 
+  - Project: my-project
+- **Description**: Grants developers access to view and edit resources within the specified project.
+- **Version**: 1.0
+- **Last Updated**: March 14, 2025
